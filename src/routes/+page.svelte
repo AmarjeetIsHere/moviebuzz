@@ -1,7 +1,46 @@
-<script>
-	import Counter from './Counter.svelte';
-	import welcome from '$lib/images/svelte-welcome.webp';
-	import welcome_fallback from '$lib/images/svelte-welcome.png';
+<script lang="ts">
+  // import Counter from './Counter.svelte';
+  import axios from 'axios';
+  import { onMount } from 'svelte';
+  import MovieDetails from '../components/MovieDetails.svelte';
+  import MovieCard from '../components/MovieCard.svelte';
+
+  let movies:any = [];
+
+  let selectedMovie:any=null ;
+  let search:string="";
+
+  const API_KEY = import.meta.env.VITE_API_KEY;
+  const API_URL = `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=1`;
+  const SEARCH_API_URL = `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&language=en-US&query=`;
+
+  async function fetchMovies(url: string) {
+    try {
+      const response = await axios.get(url);
+      movies = response.data.results;
+    } catch (err) {
+      console.log('Failed to fetch movies.');
+      console.error(err);
+    }
+  }
+  
+  function handleChange(e:any){
+    if (search.trim()) {
+      fetchMovies(`${SEARCH_API_URL}${search}`);
+    } else {
+      fetchMovies(API_URL);
+    }
+  }
+
+  onMount(async () => {
+    try {
+      fetchMovies(API_URL);
+    } catch (err) {
+      console.log('Failed to fetch movies.');
+      console.error(err);
+    }
+  });
+
 </script>
 
 <svelte:head>
@@ -9,51 +48,45 @@
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
-<section>
-	<h1>
-		<span class="welcome">
-			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcome_fallback} alt="Welcome" />
-			</picture>
-		</span>
+<!-- <section>
+		<Counter />
+</section> -->
 
-		to your new<br />SvelteKit app
-	</h1>
+{#if selectedMovie !=null}
+  <MovieDetails bind:movie={selectedMovie} bind:selectedMovie />
+{/if}
 
-	<h2>
-		try editing <strong>src/routes/+page.svelte</strong>
-	</h2>
+<div class="search">
+  <input type="text" id="search" on:input={handleChange} bind:value={search} placeholder="Search" />
+</div>
 
-	<Counter />
-</section>
+<div class="gallery">
+  {#each movies as movie, index}
+    <MovieCard  {movie} bind:selectedMovie />
+  {/each}
+</div>
 
 <style>
-	section {
+	/* section {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
 		flex: 0.6;
-	}
+	} */
 
-	h1 {
-		width: 100%;
-	}
+  .gallery {
+    display: flex;
+    flex-wrap: wrap;
+  }
 
-	.welcome {
-		display: block;
-		position: relative;
-		width: 100%;
-		height: 0;
-		padding: 0 0 calc(100% * 495 / 2048) 0;
-	}
+  .search{
+    padding: 0px 0px 0px 18px;
+  }
 
-	.welcome img {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		display: block;
-	}
+  input {
+    height: 1.5rem;
+    width: 15rem;
+    border-radius: 0.5rem;
+  }
 </style>
